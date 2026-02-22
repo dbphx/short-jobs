@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
+import { NearMe, Refresh } from '@mui/icons-material';
 import {
-    Container, Grid, Typography, Box, Slider, Alert, CircularProgress,
+    Container, Grid, Typography, Box, Slider, Alert, CircularProgress, IconButton, Tooltip,
 } from '@mui/material';
-import { NearMe } from '@mui/icons-material';
 import api from '../api/api';
 import MapView from '../components/MapView';
 import JobCard from '../components/JobCard';
@@ -61,14 +61,49 @@ export default function NearbyJobsPage() {
         }
     };
 
+    const handleRefreshLocation = () => {
+        if (!navigator.geolocation) {
+            setError('Geolocation is not supported by your browser');
+            return;
+        }
+
+        setLoading(true);
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const { latitude, longitude } = pos.coords;
+                setPosition([latitude, longitude]);
+                fetchJobs(latitude, longitude, radius);
+            },
+            (err) => {
+                setError('Could not get current location: ' + err.message);
+                setLoading(false);
+            },
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
+    };
+
     return (
         <Container maxWidth="lg" sx={{ mt: 3 }}>
             <Box sx={{ mb: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <NearMe sx={{ color: 'primary.main' }} />
-                    <Typography variant="h4" fontWeight={800}>
-                        Jobs Nearby
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexGrow: 1 }}>
+                        <NearMe sx={{ color: 'primary.main' }} />
+                        <Typography variant="h4" fontWeight={800}>
+                            Jobs Nearby
+                        </Typography>
+                    </Box>
+                    <Tooltip title="Refresh Location">
+                        <IconButton
+                            onClick={handleRefreshLocation}
+                            disabled={loading}
+                            sx={{
+                                background: 'rgba(108, 99, 255, 0.1)',
+                                '&:hover': { background: 'rgba(108, 99, 255, 0.2)' }
+                            }}
+                        >
+                            <Refresh sx={{ color: 'primary.main' }} />
+                        </IconButton>
+                    </Tooltip>
                 </Box>
                 <Typography color="text.secondary">
                     Showing jobs within {radius}km of your location

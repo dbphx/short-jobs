@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     Container, Paper, Typography, Box, TextField, Button, Alert,
 } from '@mui/material';
-import { AddCircle } from '@mui/icons-material';
+import { AddCircle, MyLocation } from '@mui/icons-material';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -18,11 +18,17 @@ L.Icon.Default.mergeOptions({
 });
 
 function LocationPicker({ position, setPosition }) {
-    useMapEvents({
+    const map = useMapEvents({
         click(e) {
             setPosition([e.latlng.lat, e.latlng.lng]);
         },
     });
+
+    useEffect(() => {
+        if (position) {
+            map.flyTo(position, map.getZoom());
+        }
+    }, [position, map]);
 
     return position ? <Marker position={position} /> : null;
 }
@@ -141,9 +147,27 @@ export default function PostJobPage() {
                         />
                     </Box>
 
-                    <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 3, mb: 1 }}>
-                        📍 Job Location (click on map)
-                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 3, mb: 1 }}>
+                        <Typography variant="subtitle1" fontWeight={600}>
+                            📍 Job Location (click on map)
+                        </Typography>
+                        <Button
+                            size="small"
+                            startIcon={<MyLocation />}
+                            onClick={() => {
+                                if (navigator.geolocation) {
+                                    navigator.geolocation.getCurrentPosition(
+                                        (pos) => setPosition([pos.coords.latitude, pos.coords.longitude]),
+                                        (err) => setError('Could not get current location: ' + err.message)
+                                    );
+                                } else {
+                                    setError('Geolocation is not supported by your browser');
+                                }
+                            }}
+                        >
+                            Use My Location
+                        </Button>
+                    </Box>
                     <Box sx={{ borderRadius: 3, overflow: 'hidden', mb: 2 }}>
                         <MapContainer
                             center={mapCenter}
